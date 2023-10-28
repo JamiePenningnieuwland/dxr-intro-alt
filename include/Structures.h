@@ -30,6 +30,8 @@
 #include "Common.h"
 #include "../DXRstructures.h"
 #include <winnt.h>
+#include <stdexcept>
+
 
 //--------------------------------------------------------------------------------------
 // Helpers
@@ -151,6 +153,51 @@ struct BlasInstance
 	AccelerationStructureBuffer BLAS;
 	DirectX::XMMATRIX transform;
 };
+struct D3D12Global
+{
+	IDXGIFactory4* factory = nullptr;
+	IDXGIAdapter1* adapter = nullptr;
+	ID3D12Device5* device = nullptr;
+	ID3D12GraphicsCommandList4* cmdList = nullptr;
+	ID3D12CommandQueue* cmdQueue = nullptr;
+	ID3D12CommandAllocator* cmdAlloc[2] = { nullptr, nullptr };
+
+	IDXGISwapChain3* swapChain = nullptr;
+	ID3D12Resource* backBuffer[2] = { nullptr, nullptr };
+
+	ID3D12Fence* fence = nullptr;
+	UINT64											fenceValues[2] = { 0, 0 };
+	HANDLE											fenceEvent;
+	UINT											frameIndex = 0;
+
+	int												width = 640;
+	int												height = 360;
+	bool											vsync = false;
+};
+class DescriptorHeap
+{
+public:
+	DescriptorHeap() = default;
+	// Default size is biggest number
+	DescriptorHeap(D3D12Global& d3d, uint32_t size = 2000);
+	
+	void SetDescriptorHeap(D3D12Global& d3d);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE GetNextHeapIndex();
+
+	size_t GetHeapIndex(UINT index);
+	
+	const D3D12_GPU_DESCRIPTOR_HANDLE GetGPUhandle() const;// { return GPUhandle; }
+	~DescriptorHeap();
+
+	D3D12_CPU_DESCRIPTOR_HANDLE CPUhandle;
+private:
+
+	ID3D12DescriptorHeap* descriptorHeap = nullptr;
+	UINT m_NumEntries;
+	UINT m_IncrementSize;
+	D3D12_GPU_DESCRIPTOR_HANDLE GPUhandle;
+};
 struct D3D12Resources 
 {
 	std::vector<BlasInstance>                       instances;
@@ -165,7 +212,10 @@ struct D3D12Resources
 	UINT8*											materialCBStart = nullptr;
 
 	ID3D12DescriptorHeap*							rtvHeap = nullptr;
-	ID3D12DescriptorHeap*							descriptorHeap = nullptr;
+	/*ID3D12DescriptorHeap*							descriptorHeap = nullptr;
+	uint32_t										numDescEntries = 0;
+	D3D12_CPU_DESCRIPTOR_HANDLE						descriptorHandle;*/
+	DescriptorHeap*									SrvCbvUavHeap;
 
 	ID3D12Resource*									texture = nullptr;
 	ID3D12Resource*									textureUploadResource = nullptr;
@@ -174,29 +224,9 @@ struct D3D12Resources
 
 };
 
-struct D3D12Global
-{
-	IDXGIFactory4*									factory = nullptr;
-	IDXGIAdapter1*									adapter = nullptr;
-	ID3D12Device5*									device = nullptr;
-	ID3D12GraphicsCommandList4*						cmdList = nullptr;
-	ID3D12CommandQueue*								cmdQueue = nullptr;
-	ID3D12CommandAllocator*							cmdAlloc[2] = { nullptr, nullptr };
-
-	IDXGISwapChain3*								swapChain = nullptr;
-	ID3D12Resource*									backBuffer[2] = { nullptr, nullptr };
-
-	ID3D12Fence*									fence = nullptr;
-	UINT64											fenceValues[2] = { 0, 0 };
-	HANDLE											fenceEvent;
-	UINT											frameIndex = 0;
-
-	int												width = 640;
-	int												height = 360;
-	bool											vsync = false;
-};
 
 
+enum class eDescriptorType { CBV = 0, UAV = 1, SRV = 2 };
 class Model
 {
 public:
@@ -207,14 +237,15 @@ public:
 	{
 		SAFE_RELEASE(vertexBuffer);
 		SAFE_RELEASE(indexBuffer);
-		//SAFE_RELEASE(BLAS.pScratch);
-		//SAFE_RELEASE(BLAS.pResult);
-		//SAFE_RELEASE(BLAS.pInstanceDesc);
+		
 	}
-	void Create_DescriptorHeaps(D3D12Global& d3d, D3D12_CPU_DESCRIPTOR_HANDLE& handleStart);
+
+	void Create_DescriptorHeaps(D3D12Global& d3d, D3D12Resources& resources);
 	void Create_Bottom_Level_AS(D3D12Global& d3d);
 	void Create_Vertex_Buffer(D3D12Global& d3d);
 	void Create_Index_Buffer(D3D12Global& d3d);
+private:
+	
 
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
@@ -223,7 +254,6 @@ public:
 	ID3D12Resource* indexBuffer = nullptr;
 	D3D12_INDEX_BUFFER_VIEW							indexBufferView;
 
-private:
-	
 	AccelerationStructureBuffer						BLAS;
+
 };

@@ -126,7 +126,7 @@ void Model::Create_Index_Buffer(D3D12Global& d3d)
 	indexBufferView.SizeInBytes = static_cast<UINT>(info.size);
 	indexBufferView.Format = DXGI_FORMAT_R32_UINT;
 }
-void Model::Create_DescriptorHeaps(D3D12Global& d3d, D3D12_CPU_DESCRIPTOR_HANDLE& handle)
+void Model::Create_DescriptorHeaps(D3D12Global& d3d, D3D12Resources& resources)
 {
 	int descriptorSize = d3d.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
@@ -140,11 +140,9 @@ void Model::Create_DescriptorHeaps(D3D12Global& d3d, D3D12_CPU_DESCRIPTOR_HANDLE
 	indexSRVDesc.Buffer.NumElements = (static_cast<UINT>(indices.size()) * sizeof(UINT)) / sizeof(float);
 	indexSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-	UINT handleIncrement = d3d.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	//UINT handleIncrement = d3d.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	handle.ptr +=  descriptorSize;
-	d3d.device->CreateShaderResourceView(indexBuffer, &indexSRVDesc, handle);
-	
+	d3d.device->CreateShaderResourceView(indexBuffer, &indexSRVDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());
 
 	// Create the vertex buffer SRV
 	D3D12_SHADER_RESOURCE_VIEW_DESC vertexSRVDesc;
@@ -156,7 +154,6 @@ void Model::Create_DescriptorHeaps(D3D12Global& d3d, D3D12_CPU_DESCRIPTOR_HANDLE
 	vertexSRVDesc.Buffer.NumElements = (static_cast<UINT>(vertices.size()) * sizeof(Vertex)) / sizeof(float);
 	vertexSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-	handle.ptr +=  descriptorSize;
-	d3d.device->CreateShaderResourceView(vertexBuffer, &vertexSRVDesc, handle);;
+	d3d.device->CreateShaderResourceView(vertexBuffer, &vertexSRVDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());;
 
 }

@@ -4,6 +4,7 @@
 //  DXR
 //--------------------------------------------------------------------------------------
 
+
 struct D3D12ShaderCompilerInfo
 {
 	dxc::DxcDllSupport		DxcDllHelper;

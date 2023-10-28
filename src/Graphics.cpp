@@ -301,7 +301,8 @@ void Destroy(D3D12Resources &resources)
 	SAFE_RELEASE(resources.viewCB);
 	SAFE_RELEASE(resources.materialCB);
 	SAFE_RELEASE(resources.rtvHeap);
-	SAFE_RELEASE(resources.descriptorHeap);
+	resources.SrvCbvUavHeap->~DescriptorHeap();
+	//SAFE_RELEASE(resources.descriptorHeap);
 	SAFE_RELEASE(resources.texture);
 	SAFE_RELEASE(resources.textureUploadResource);
 }
@@ -710,7 +711,7 @@ namespace DXR
 /**
 * Create the top level acceleration structure and its associated buffers.
 */
-void Create_Top_Level_AS(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &resources) 
+void Create_Top_Level_AS(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources& resources) 
 {
 
 
@@ -757,7 +758,7 @@ void Create_Top_Level_AS(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &resou
 	ASInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 	ASInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
 	ASInputs.InstanceDescs = dxr.TLAS.pInstanceDesc->GetGPUVirtualAddress();
-	ASInputs.NumDescs = resources.instances.size();
+	ASInputs.NumDescs = static_cast<UINT>(resources.instances.size());
 	ASInputs.Flags = buildFlags;
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO ASPreBuildInfo = {};
@@ -826,7 +827,7 @@ void Create_RayGen_Program(D3D12Global &d3d, DXRGlobal &dxr, D3D12ShaderCompiler
 	ranges[1].OffsetInDescriptorsFromTableStart = 2;
 
 	ranges[2].BaseShaderRegister = 0;
-	ranges[2].NumDescriptors = 4;
+	ranges[2].NumDescriptors = 6;
 	ranges[2].RegisterSpace = 0;
 	ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	ranges[2].OffsetInDescriptorsFromTableStart = 3;
@@ -1081,7 +1082,7 @@ void Create_Shader_Table(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &resou
 	memcpy(pData, dxr.rtpsoInfo->GetShaderIdentifier(L"RayGen_12"), shaderIdSize);
 
 	// Set the root parameter data. Point to start of descriptor heap.
-	*reinterpret_cast<D3D12_GPU_DESCRIPTOR_HANDLE*>(pData + shaderIdSize) = resources.descriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	*reinterpret_cast<D3D12_GPU_DESCRIPTOR_HANDLE*>(pData + shaderIdSize) = resources.SrvCbvUavHeap->GetGPUhandle();
 
 	// Shader Record 1 - Miss program (no local root arguments to set)
 	pData += dxr.shaderTableRecordSize;
@@ -1092,7 +1093,7 @@ void Create_Shader_Table(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &resou
 	memcpy(pData, dxr.rtpsoInfo->GetShaderIdentifier(L"HitGroup"), shaderIdSize);
 
 	// Set the root parameter data. Point to start of descriptor heap.
-	*reinterpret_cast<D3D12_GPU_DESCRIPTOR_HANDLE*>(pData + shaderIdSize) = resources.descriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	*reinterpret_cast<D3D12_GPU_DESCRIPTOR_HANDLE*>(pData + shaderIdSize) = resources.SrvCbvUavHeap->GetGPUhandle();
 
 	// Unmap
 	dxr.shaderTable->Unmap(0, nullptr);
@@ -1101,7 +1102,7 @@ void Create_Shader_Table(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &resou
 /**
 * Create the DXR descriptor heap for CBVs, SRVs, and the output UAV.
 */
-void Create_Descriptor_Heaps(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &resources, Model &model)
+void Create_Descriptor_Heaps(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &resources)
 {
 	// Describe the CBV/SRV/UAV heap
 	// Need 7 entries:
@@ -1112,42 +1113,28 @@ void Create_Descriptor_Heaps(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &r
 	// 1 SRV for the index buffer
 	// 1 SRV for the vertex buffer
 	// 1 SRV for the texture
-	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-	desc.NumDescriptors = 7;
-	desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
-	// Create the descriptor heap
-	HRESULT hr = d3d.device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&resources.descriptorHeap));
-	Utils::Validate(hr, L"Error: failed to create DXR CBV/SRV/UAV descriptor heap!");
-
-	// Get the descriptor heap handle and increment size
-	D3D12_CPU_DESCRIPTOR_HANDLE handle = resources.descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	UINT handleIncrement = d3d.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-#if NAME_D3D_RESOURCES
-	resources.descriptorHeap->SetName(L"DXR Descriptor Heap");
-#endif
-
+	resources.SrvCbvUavHeap = new DescriptorHeap(d3d);
 	// Create the ViewCB CBV
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 	cbvDesc.SizeInBytes = ALIGN(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, sizeof(resources.viewCBData));
 	cbvDesc.BufferLocation = resources.viewCB->GetGPUVirtualAddress();
 
-	d3d.device->CreateConstantBufferView(&cbvDesc, handle);
+	d3d.device->CreateConstantBufferView(&cbvDesc, resources.SrvCbvUavHeap->CPUhandle);
+	
 
 	// Create the MaterialCB CBV
 	cbvDesc.SizeInBytes = ALIGN(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, sizeof(resources.materialCBData));
 	cbvDesc.BufferLocation = resources.materialCB->GetGPUVirtualAddress();
 
-	handle.ptr += handleIncrement;
-	d3d.device->CreateConstantBufferView(&cbvDesc, handle);
+	d3d.device->CreateConstantBufferView(&cbvDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());
 
 	// Create the DXR output buffer UAV
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 
-	handle.ptr += handleIncrement;
-	d3d.device->CreateUnorderedAccessView(resources.DXROutput, nullptr, &uavDesc, handle);
+	d3d.device->CreateUnorderedAccessView(resources.DXROutput, nullptr, &uavDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());
+
 
 	// Create the DXR Top Level Acceleration Structure SRV
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
@@ -1156,10 +1143,7 @@ void Create_Descriptor_Heaps(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &r
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.RaytracingAccelerationStructure.Location = dxr.TLAS.pResult->GetGPUVirtualAddress();
 
-	handle.ptr += handleIncrement;
-	d3d.device->CreateShaderResourceView(nullptr, &srvDesc, handle);
-
-	model.Create_DescriptorHeaps(d3d, handle);
+	d3d.device->CreateShaderResourceView(nullptr, &srvDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());
 
 	// Create the material texture SRV
 	D3D12_SHADER_RESOURCE_VIEW_DESC textureSRVDesc = {};
@@ -1169,8 +1153,9 @@ void Create_Descriptor_Heaps(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &r
 	textureSRVDesc.Texture2D.MostDetailedMip = 0;
 	textureSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-	handle.ptr += handleIncrement;
-	d3d.device->CreateShaderResourceView(resources.texture, &textureSRVDesc, handle);
+	//resources.descriptorHandle.ptr += handleIncrement;
+	d3d.device->CreateShaderResourceView(resources.texture, &textureSRVDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());
+
 }
 
 /**
@@ -1225,9 +1210,7 @@ void Build_Command_List(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &resour
 	// Wait for the transitions to complete
 	d3d.cmdList->ResourceBarrier(2, OutputBarriers);
 	
-	// Set the UAV/SRV/CBV and sampler heaps
-	ID3D12DescriptorHeap* ppHeaps[] = { resources.descriptorHeap };
-	d3d.cmdList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	resources.SrvCbvUavHeap->SetDescriptorHeap(d3d);
 	
 	// Dispatch rays
 	D3D12_DISPATCH_RAYS_DESC desc = {};
@@ -1291,4 +1274,56 @@ void Destroy(DXRGlobal &dxr)
 	SAFE_RELEASE(dxr.rtpsoInfo);
 }
 
+}
+
+// Default size is biggest number
+DescriptorHeap::DescriptorHeap(D3D12Global& d3d, uint32_t size) : m_NumEntries(0)
+{
+	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+
+	desc.NumDescriptors = size;
+	desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+	// Create the descriptor heap
+	HRESULT hr = d3d.device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptorHeap));
+	Utils::Validate(hr, L"Error: failed to create DXR CBV/SRV/UAV descriptor heap!");
+
+#if NAME_D3D_RESOURCES
+	descriptorHeap->SetName(L"DXR Descriptor Heap");
+#endif
+
+	// Get the descriptor heap handle and increment size
+	GPUhandle = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	CPUhandle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_IncrementSize = d3d.device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+}
+void DescriptorHeap::SetDescriptorHeap(D3D12Global& d3d)
+{
+	// Set the UAV/SRV/CBV and sampler heaps
+	ID3D12DescriptorHeap* ppHeaps[] = { descriptorHeap };
+	d3d.cmdList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+}
+D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::GetNextHeapIndex()
+{
+	m_NumEntries += 1;
+	/*if (CPUhandle.ptr == descriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr)
+		return CPUhandle;*/
+
+	CPUhandle.ptr += m_IncrementSize;
+	return CPUhandle;
+}
+size_t DescriptorHeap::GetHeapIndex(UINT index)
+{
+	if (index < m_NumEntries)
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE tempHandle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		return tempHandle.ptr += index * m_IncrementSize;
+	}
+	else throw std::runtime_error("Index does not excist, did you mean to getNextHeapIndex?");
+}
+const D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::GetGPUhandle() const { return GPUhandle; }
+DescriptorHeap::~DescriptorHeap()
+{
+	SAFE_RELEASE(descriptorHeap);
 }
