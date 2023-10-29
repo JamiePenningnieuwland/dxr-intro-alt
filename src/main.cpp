@@ -53,11 +53,10 @@ public:
 		d3d.height = config.height;
 		d3d.vsync = config.vsync;
 		float aspectRatio = (float)d3d.width / (float)d3d.height;
-		float fov = 65.f;// *(XM_PI / 180.f);
+		float fov = 65.f;
 		cam = Camera(aspectRatio, fov, { 0.f,0.f,10.f }, { 0.f,0.f, 0.f });
+
 		// Load a model
-		//Utils::LoadModel("Models/quad.obj", model, material);
-		//model1 = Model("Models/quad.obj");
 		model = Model("Models/quad.obj");
 		
 		// Initialize the shader compiler
@@ -75,29 +74,28 @@ public:
 		// Create common resources
 		D3DResources::Create_Descriptor_Heaps(d3d, resources);
 		D3DResources::Create_BackBuffer_RTV(d3d, resources);
+		D3DResources::Create_View_CB(d3d, resources);
 
+		// Create model instance resources
 		model.Create_Vertex_Buffer(d3d);
 		model.Create_Index_Buffer(d3d);
+		model.Create_Bottom_Level_AS(d3d);
 	
 		model.Create_Texture(d3d, resources);
-		D3DResources::Create_View_CB(d3d, resources);
-		model.Bind_Material(d3d, resources);
-
-		// Create DXR specific resources
-		model.Create_Bottom_Level_AS(d3d);
+		model.Set_MaterialCB_Data(d3d, resources);
 
 		DirectX::XMMATRIX transform = DirectX::XMMatrixIdentity();
-		DirectX::XMMATRIX transform2 = DirectX::XMMatrixIdentity();
-
-		transform2 = DirectX::XMMatrixTranslation( 0.f, 10.f, 0.f );
 		transform = DirectX::XMMatrixTranslation( 0.f, -5.f, 0.f );
 
+		// Adding two isntances to TLAS
 		D3DResources::AddBLASinstance(model.GetBLAS(), DirectX::XMMatrixIdentity(), resources);
+		D3DResources::AddBLASinstance(model.GetBLAS(), transform, resources);
 		
 		DXR::Create_Top_Level_AS(d3d, dxr, resources);
 		DXR::Create_DXR_Output(d3d, resources);
 		DXR::Create_Descriptor_Heaps(d3d, dxr, resources);
-		model.Create_DescriptorHeaps(d3d, resources);
+	
+		model.Set_Index_Vertex_SRV(d3d, resources);
 
 		DXR::Create_TextureDescriptor(d3d, resources);
 		DXR::Create_RayGen_Program(d3d, dxr, shaderCompiler);

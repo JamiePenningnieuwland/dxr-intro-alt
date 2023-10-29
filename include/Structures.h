@@ -185,14 +185,15 @@ public:
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetNextHeapIndex();
 
-	size_t GetHeapIndex(UINT index);
+	D3D12_CPU_DESCRIPTOR_HANDLE GetHeapIndex(UINT index);
 	
 	const D3D12_GPU_DESCRIPTOR_HANDLE GetGPUhandle() const;// { return GPUhandle; }
 	~DescriptorHeap();
 
-	D3D12_CPU_DESCRIPTOR_HANDLE CPUhandle;
+	
 private:
 
+	D3D12_CPU_DESCRIPTOR_HANDLE CPUhandle;
 	ID3D12DescriptorHeap* descriptorHeap = nullptr;
 	UINT m_NumEntries;
 	UINT m_IncrementSize;
@@ -247,8 +248,8 @@ public:
 		SAFE_RELEASE(textureUploadResource[1]);
 		
 	}
-	void Bind_Material(D3D12Global& d3d, D3D12Resources& resources);
-	void Create_DescriptorHeaps(D3D12Global& d3d, D3D12Resources& resources);
+	void Set_MaterialCB_Data(D3D12Global& d3d, D3D12Resources& resources);
+	void Set_Index_Vertex_SRV(D3D12Global& d3d, D3D12Resources& resources);
 	void Create_Bottom_Level_AS(D3D12Global& d3d);
 	void Create_Vertex_Buffer(D3D12Global& d3d);
 	void Create_Index_Buffer(D3D12Global& d3d);

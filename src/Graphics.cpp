@@ -1125,7 +1125,7 @@ void Create_Descriptor_Heaps(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &r
 	cbvDesc.SizeInBytes = ALIGN(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, sizeof(resources.viewCBData));
 	cbvDesc.BufferLocation = resources.viewCB->GetGPUVirtualAddress();
 
-	d3d.device->CreateConstantBufferView(&cbvDesc, resources.SrvCbvUavHeap->CPUhandle);
+	d3d.device->CreateConstantBufferView(&cbvDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());
 	
 
 	// Create the MaterialCB CBV
@@ -1150,7 +1150,51 @@ void Create_Descriptor_Heaps(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &r
 
 	d3d.device->CreateShaderResourceView(nullptr, &srvDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());
 
+	ID3D12Resource* vertexBuffer = nullptr;
+	ID3D12Resource* indexBuffer = nullptr;
 
+	// Create the index buffer resource
+	D3D12BufferCreateInfo info1((UINT)4 * sizeof(UINT), D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+	D3DResources::Create_Buffer(d3d, info1, &indexBuffer);
+#if NAME_D3D_RESOURCES
+	indexBuffer->SetName(L"Index Buffer");
+#endif
+
+	// Create the vertex buffer resource
+	D3D12BufferCreateInfo info(((UINT)4 * sizeof(Vertex)), D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+	D3DResources::Create_Buffer(d3d, info, &vertexBuffer);
+#if NAME_D3D_RESOURCES
+	vertexBuffer->SetName(L"Vertex Buffer");
+#endif
+
+
+	// Create the index buffer SRV
+	D3D12_SHADER_RESOURCE_VIEW_DESC indexSRVDesc;
+	indexSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+	indexSRVDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	indexSRVDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
+	indexSRVDesc.Buffer.StructureByteStride = 0;
+	indexSRVDesc.Buffer.FirstElement = 0;
+	indexSRVDesc.Buffer.NumElements = (static_cast<UINT>(4) * sizeof(UINT)) / sizeof(float);
+	indexSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+	d3d.device->CreateShaderResourceView(indexBuffer, &indexSRVDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());
+
+	// Create the vertex buffer SRV
+	D3D12_SHADER_RESOURCE_VIEW_DESC vertexSRVDesc;
+	vertexSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+	vertexSRVDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	vertexSRVDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
+	vertexSRVDesc.Buffer.StructureByteStride = 0;
+	vertexSRVDesc.Buffer.FirstElement = 0;
+	vertexSRVDesc.Buffer.NumElements = (static_cast<UINT>(4) * sizeof(Vertex)) / sizeof(float);
+	vertexSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+	d3d.device->CreateShaderResourceView(vertexBuffer, &vertexSRVDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());
+
+	SAFE_RELEASE(vertexBuffer);
+	SAFE_RELEASE(indexBuffer);
+	
 }
 
 /**
@@ -1301,19 +1345,23 @@ void DescriptorHeap::SetDescriptorHeap(D3D12Global& d3d)
 }
 D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::GetNextHeapIndex()
 {
+	if(m_NumEntries == 0)
+	{
+		m_NumEntries += 1;
+		return CPUhandle;
+	}
 	m_NumEntries += 1;
-	/*if (CPUhandle.ptr == descriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr)
-		return CPUhandle;*/
-
 	CPUhandle.ptr += m_IncrementSize;
+
 	return CPUhandle;
 }
-size_t DescriptorHeap::GetHeapIndex(UINT index)
+D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::GetHeapIndex(UINT index)
 {
 	if (index < m_NumEntries)
 	{
 		D3D12_CPU_DESCRIPTOR_HANDLE tempHandle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-		return tempHandle.ptr += index * m_IncrementSize;
+		tempHandle.ptr += index * m_IncrementSize;
+		return tempHandle;
 	}
 	else throw std::runtime_error("Index does not excist, did you mean to getNextHeapIndex?");
 }
