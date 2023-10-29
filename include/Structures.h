@@ -208,9 +208,9 @@ struct D3D12Resources
 	ViewCB											viewCBData;
 	UINT8*											viewCBStart = nullptr;
 
-	ID3D12Resource*									materialCB = nullptr;
+	//ID3D12Resource*									materialCB = nullptr;
 	//MaterialCB										materialCBData;	
-	UINT8*											materialCBStart = nullptr;
+	//UINT8*											materialCBStart = nullptr;
 
 	ID3D12DescriptorHeap*							rtvHeap = nullptr;
 	/*ID3D12DescriptorHeap*							descriptorHeap = nullptr;
@@ -221,8 +221,8 @@ struct D3D12Resources
 	/*ID3D12Resource*									texture = nullptr;
 	ID3D12Resource*									textureUploadResource = nullptr;*/
 
-	ID3D12Resource* textures[1];
-	ID3D12Resource* textureUploadResource[1];
+	ID3D12Resource* textures[2];
+	ID3D12Resource* textureUploadResource[2];
 	UINT											numTextures = 0;
 
 	UINT											rtvDescSize = 0;

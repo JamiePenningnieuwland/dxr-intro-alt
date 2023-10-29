@@ -224,10 +224,10 @@ void Create_View_CB(D3D12Global &d3d, D3D12Resources &resources)
 
 	memcpy(resources.viewCBStart, &resources.viewCBData, sizeof(resources.viewCBData));
 
-	D3DResources::Create_Constant_Buffer(d3d, &resources.materialCB, sizeof(MaterialCB));
-#if NAME_D3D_RESOURCES
-	resources.materialCB->SetName(L"Material Constant Buffer");
-#endif
+//	D3DResources::Create_Constant_Buffer(d3d, &resources.materialCB, sizeof(MaterialCB));
+//#if NAME_D3D_RESOURCES
+//	resources.materialCB->SetName(L"Material Constant Buffer");
+//#endif
 }
 
 /**
@@ -278,8 +278,8 @@ void Destroy(D3D12Resources &resources)
 {
 	if (resources.viewCB) resources.viewCB->Unmap(0, nullptr);
 	if (resources.viewCBStart) resources.viewCBStart = nullptr;
-	if (resources.materialCB) resources.materialCB->Unmap(0, nullptr);
-	if (resources.materialCBStart) resources.materialCBStart = nullptr;
+	//if (resources.materialCB) resources.materialCB->Unmap(0, nullptr);
+	//if (resources.materialCBStart) resources.materialCBStart = nullptr;
 
 	SAFE_RELEASE(resources.DXROutput);
 	for(auto& instance : resources.instances)
@@ -290,7 +290,7 @@ void Destroy(D3D12Resources &resources)
 	}
 	
 	SAFE_RELEASE(resources.viewCB);
-	SAFE_RELEASE(resources.materialCB);
+	//SAFE_RELEASE(resources.materialCB);
 	SAFE_RELEASE(resources.rtvHeap);
 	resources.SrvCbvUavHeap->~DescriptorHeap();
 	//SAFE_RELEASE(resources.descriptorHeap);
@@ -805,7 +805,7 @@ void Create_RayGen_Program(D3D12Global &d3d, DXRGlobal &dxr, D3D12ShaderCompiler
 	D3D12_DESCRIPTOR_RANGE ranges[3];
 
 	ranges[0].BaseShaderRegister = 0;
-	ranges[0].NumDescriptors = 2;
+	ranges[0].NumDescriptors = 1;
 	ranges[0].RegisterSpace = 0;
 	ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 	ranges[0].OffsetInDescriptorsFromTableStart = 0;
@@ -814,13 +814,13 @@ void Create_RayGen_Program(D3D12Global &d3d, DXRGlobal &dxr, D3D12ShaderCompiler
 	ranges[1].NumDescriptors = 1;
 	ranges[1].RegisterSpace = 0;
 	ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-	ranges[1].OffsetInDescriptorsFromTableStart = 2;
+	ranges[1].OffsetInDescriptorsFromTableStart = 1;
 
 	ranges[2].BaseShaderRegister = 0;
-	ranges[2].NumDescriptors = 4;
+	ranges[2].NumDescriptors = 5;
 	ranges[2].RegisterSpace = 0;
 	ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	ranges[2].OffsetInDescriptorsFromTableStart = 3;
+	ranges[2].OffsetInDescriptorsFromTableStart = 2;
 
 	D3D12_ROOT_PARAMETER param0 = {};
 	param0.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -1094,7 +1094,7 @@ void Create_Shader_Table(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &resou
 */
 void Create_TextureDescriptor(D3D12Global& d3d, D3D12Resources& resources)
 {
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		// Create the material texture SRV
 		D3D12_SHADER_RESOURCE_VIEW_DESC textureSRVDesc = {};
@@ -1128,11 +1128,11 @@ void Create_Descriptor_Heaps(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &r
 	d3d.device->CreateConstantBufferView(&cbvDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());
 	
 
-	// Create the MaterialCB CBV
-	cbvDesc.SizeInBytes = ALIGN(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, sizeof(MaterialCB));
-	cbvDesc.BufferLocation = resources.materialCB->GetGPUVirtualAddress();
+	//// Create the MaterialCB CBV
+	//cbvDesc.SizeInBytes = ALIGN(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, sizeof(MaterialCB));
+	//cbvDesc.BufferLocation = resources.materialCB->GetGPUVirtualAddress();
 
-	d3d.device->CreateConstantBufferView(&cbvDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());
+	//d3d.device->CreateConstantBufferView(&cbvDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());
 
 	// Create the DXR output buffer UAV
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};

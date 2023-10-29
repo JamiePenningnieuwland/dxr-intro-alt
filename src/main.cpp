@@ -58,6 +58,7 @@ public:
 
 		// Load a model
 		model = Model("Models/quad.obj");
+		model1 = Model("Models/quad2.obj");
 		
 		// Initialize the shader compiler
 		D3DShaders::Init_Shader_Compiler(shaderCompiler);
@@ -80,15 +81,23 @@ public:
 		model.Create_Vertex_Buffer(d3d);
 		model.Create_Index_Buffer(d3d);
 		model.Create_Bottom_Level_AS(d3d);
+
+		model1.Create_Vertex_Buffer(d3d);
+		model1.Create_Index_Buffer(d3d);
+		model1.Create_Bottom_Level_AS(d3d);
 	
 		model.Create_Texture(d3d, resources);
 		model.Set_MaterialCB_Data(d3d, resources);
+
+		model1.Create_Texture(d3d, resources);
+		model1.Set_MaterialCB_Data(d3d, resources);
+
 
 		DirectX::XMMATRIX transform = DirectX::XMMatrixIdentity();
 		transform = DirectX::XMMatrixTranslation( 0.f, -5.f, 0.f );
 
 		// Adding two isntances to TLAS
-		D3DResources::AddBLASinstance(model.GetBLAS(), DirectX::XMMatrixIdentity(), resources);
+		D3DResources::AddBLASinstance(model1.GetBLAS(), DirectX::XMMatrixIdentity(), resources);
 		D3DResources::AddBLASinstance(model.GetBLAS(), transform, resources);
 		
 		DXR::Create_Top_Level_AS(d3d, dxr, resources);
@@ -96,6 +105,7 @@ public:
 		DXR::Create_Descriptor_Heaps(d3d, dxr, resources);
 	
 		model.Set_Index_Vertex_SRV(d3d, resources);
+		model1.Set_Index_Vertex_SRV(d3d, resources);
 
 		DXR::Create_TextureDescriptor(d3d, resources);
 		DXR::Create_RayGen_Program(d3d, dxr, shaderCompiler);
@@ -143,7 +153,7 @@ public:
 private:
 	HWND window;
 	Model model;
-	//Model model1;
+	Model model1;
 	//Material material;
 
 	DXRGlobal dxr = {};

@@ -46,7 +46,7 @@ cbuffer ViewCB : register(b0)
 	float2 resolution;
 };
 
-cbuffer MaterialCB : register(b1)
+cbuffer instanceCB : register(b1)
 {
     uint albedoIndex;
 };

@@ -9,13 +9,13 @@ Model::Model(std::string filepath)
 }
 void Model::Set_MaterialCB_Data(D3D12Global& d3d, D3D12Resources& resources)
 {
-	MaterialCB temp;
+	/*MaterialCB temp;
 	temp.albedoIndex = material.albedoIndex;
 
 	HRESULT hr = resources.materialCB->Map(0, nullptr, reinterpret_cast<void**>(&resources.materialCBStart));
 	Utils::Validate(hr, L"Error: failed to map Material constant buffer!");
 
-	memcpy(resources.materialCBStart, &temp, sizeof(MaterialCB));
+	memcpy(resources.materialCBStart, &temp, sizeof(MaterialCB));*/
 }
 int CreateTexture(D3D12Global& d3d, D3D12Resources& resources, TextureInfo info)
 {
@@ -202,7 +202,7 @@ void Model::Set_Index_Vertex_SRV(D3D12Global& d3d, D3D12Resources& resources)
 	indexSRVDesc.Buffer.NumElements = (static_cast<UINT>(indices.size()) * sizeof(UINT)) / sizeof(float);
 	indexSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-	d3d.device->CreateShaderResourceView(indexBuffer, &indexSRVDesc, resources.SrvCbvUavHeap->GetHeapIndex(4));
+	d3d.device->CreateShaderResourceView(indexBuffer, &indexSRVDesc, resources.SrvCbvUavHeap->GetHeapIndex(3));
 
 	// Create the vertex buffer SRV
 	D3D12_SHADER_RESOURCE_VIEW_DESC vertexSRVDesc;
@@ -214,6 +214,6 @@ void Model::Set_Index_Vertex_SRV(D3D12Global& d3d, D3D12Resources& resources)
 	vertexSRVDesc.Buffer.NumElements = (static_cast<UINT>(vertices.size()) * sizeof(Vertex)) / sizeof(float);
 	vertexSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-	d3d.device->CreateShaderResourceView(vertexBuffer, &vertexSRVDesc, resources.SrvCbvUavHeap->GetHeapIndex(5));
+	d3d.device->CreateShaderResourceView(vertexBuffer, &vertexSRVDesc, resources.SrvCbvUavHeap->GetHeapIndex(4));
 	
 }
