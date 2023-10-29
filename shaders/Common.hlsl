@@ -48,7 +48,7 @@ cbuffer ViewCB : register(b0)
 
 cbuffer MaterialCB : register(b1)
 {
-	float4 textureResolution;
+    uint albedoIndex;
 };
 
 // ---[ Resources ]---

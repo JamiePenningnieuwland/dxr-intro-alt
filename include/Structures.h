@@ -88,7 +88,7 @@ struct Material
 {
 	std::string name = "defaultMaterial";
 	std::string texturePath = "";
-	float  textureResolution = 512;
+	UINT albedoIndex;
 };
 
 
@@ -103,7 +103,7 @@ struct TextureInfo
 
 struct MaterialCB 
 {
-	DirectX::XMFLOAT4 resolution;
+	UINT albedoIndex;
 };
 
 struct ViewCB
@@ -217,8 +217,8 @@ struct D3D12Resources
 	D3D12_CPU_DESCRIPTOR_HANDLE						descriptorHandle;*/
 	DescriptorHeap*									SrvCbvUavHeap;
 
-	ID3D12Resource*									texture = nullptr;
-	ID3D12Resource*									textureUploadResource = nullptr;
+	/*ID3D12Resource*									texture = nullptr;
+	ID3D12Resource*									textureUploadResource = nullptr;*/
 
 	UINT											rtvDescSize = 0;
 
@@ -231,19 +231,22 @@ class Model
 {
 public:
 	Model() = default;
-	Model(std::string filepath, Material& material);
+	Model(std::string filepath);
 	AccelerationStructureBuffer& GetBLAS() { return BLAS; }
 	~Model()
 	{
 		SAFE_RELEASE(vertexBuffer);
 		SAFE_RELEASE(indexBuffer);
+		SAFE_RELEASE(texture);
+		SAFE_RELEASE(textureUploadResource);
 		
 	}
-
+	void Bind_Material(D3D12Global& d3d, D3D12Resources& resources);
 	void Create_DescriptorHeaps(D3D12Global& d3d, D3D12Resources& resources);
 	void Create_Bottom_Level_AS(D3D12Global& d3d);
 	void Create_Vertex_Buffer(D3D12Global& d3d);
 	void Create_Index_Buffer(D3D12Global& d3d);
+	void Create_Texture(D3D12Global& d3d);
 private:
 	
 
@@ -255,5 +258,8 @@ private:
 	D3D12_INDEX_BUFFER_VIEW							indexBufferView;
 
 	AccelerationStructureBuffer						BLAS;
+	Material										material;
+	ID3D12Resource* texture = nullptr;
+	ID3D12Resource* textureUploadResource = nullptr;
 
 };

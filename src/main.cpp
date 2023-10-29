@@ -57,7 +57,7 @@ public:
 		cam = Camera(aspectRatio, fov, { 0.f,0.f,10.f }, { 0.f,0.f, 0.f });
 		// Load a model
 		//Utils::LoadModel("Models/quad.obj", model, material);
-		model = Model("Models/quad.obj", material);
+		model = Model("Models/quad.obj");
 		
 		// Initialize the shader compiler
 		D3DShaders::Init_Shader_Compiler(shaderCompiler);
@@ -78,9 +78,10 @@ public:
 		model.Create_Vertex_Buffer(d3d);
 		model.Create_Index_Buffer(d3d);
 	
-		D3DResources::Create_Texture(d3d, resources, material);
+		model.Create_Texture(d3d);
 		D3DResources::Create_View_CB(d3d, resources);
-		D3DResources::Create_Material_CB(d3d, resources, material);
+		model.Bind_Material(d3d, resources);
+		//D3DResources::Create_Material_CB(d3d, resources);
 
 		// Create DXR specific resources
 		model.Create_Bottom_Level_AS(d3d);
@@ -145,7 +146,7 @@ private:
 	HWND window;
 	Model model;
 	Model model1;
-	Material material;
+	//Material material;
 
 	DXRGlobal dxr = {};
 	D3D12Global d3d = {};
