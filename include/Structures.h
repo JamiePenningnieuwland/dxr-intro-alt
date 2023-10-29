@@ -208,7 +208,7 @@ struct D3D12Resources
 	UINT8*											viewCBStart = nullptr;
 
 	ID3D12Resource*									materialCB = nullptr;
-	MaterialCB										materialCBData;	
+	//MaterialCB										materialCBData;	
 	UINT8*											materialCBStart = nullptr;
 
 	ID3D12DescriptorHeap*							rtvHeap = nullptr;
@@ -219,6 +219,10 @@ struct D3D12Resources
 
 	/*ID3D12Resource*									texture = nullptr;
 	ID3D12Resource*									textureUploadResource = nullptr;*/
+
+	ID3D12Resource* textures[1];
+	ID3D12Resource* textureUploadResource[1];
+	UINT											numTextures = 0;
 
 	UINT											rtvDescSize = 0;
 
@@ -237,8 +241,10 @@ public:
 	{
 		SAFE_RELEASE(vertexBuffer);
 		SAFE_RELEASE(indexBuffer);
-		SAFE_RELEASE(texture);
-		SAFE_RELEASE(textureUploadResource);
+		SAFE_RELEASE(texture[0]);
+		SAFE_RELEASE(texture[1]);
+		SAFE_RELEASE(textureUploadResource[0]);
+		SAFE_RELEASE(textureUploadResource[1]);
 		
 	}
 	void Bind_Material(D3D12Global& d3d, D3D12Resources& resources);
@@ -246,7 +252,7 @@ public:
 	void Create_Bottom_Level_AS(D3D12Global& d3d);
 	void Create_Vertex_Buffer(D3D12Global& d3d);
 	void Create_Index_Buffer(D3D12Global& d3d);
-	void Create_Texture(D3D12Global& d3d);
+	void Create_Texture(D3D12Global& d3d, D3D12Resources& resources);
 private:
 	
 
@@ -259,7 +265,7 @@ private:
 
 	AccelerationStructureBuffer						BLAS;
 	Material										material;
-	ID3D12Resource* texture = nullptr;
-	ID3D12Resource* textureUploadResource = nullptr;
+	ID3D12Resource* texture[2] = { nullptr, nullptr };
+	ID3D12Resource* textureUploadResource[2] = { nullptr, nullptr };
 
 };

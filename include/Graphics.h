@@ -105,6 +105,7 @@ namespace DXR
 	void Create_Pipeline_State_Object(D3D12Global &d3d, DXRGlobal &dxr);
 	void Create_Shader_Table(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &resources);
 	void Create_Descriptor_Heaps(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &resources);
+	void Create_TextureDescriptor(D3D12Global& d3d, D3D12Resources& resources);
 	void Create_DXR_Output(D3D12Global &d3d, D3D12Resources &resources);
 
 	void Build_Command_List(D3D12Global &d3d, DXRGlobal &dxr, D3D12Resources &resources);

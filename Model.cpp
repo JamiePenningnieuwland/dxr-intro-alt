@@ -10,29 +10,21 @@ Model::Model(std::string filepath)
 void Model::Bind_Material(D3D12Global& d3d, D3D12Resources& resources)
 {
 	MaterialCB temp;
-	temp.albedoIndex = 0;
+	temp.albedoIndex = material.albedoIndex;
 
-	D3DResources::Create_Constant_Buffer(d3d, &resources.materialCB, sizeof(MaterialCB));
-#if NAME_D3D_RESOURCES
-	resources.materialCB->SetName(L"Material Constant Buffer");
-#endif
 
-	temp.albedoIndex = 0;
 
 	HRESULT hr = resources.materialCB->Map(0, nullptr, reinterpret_cast<void**>(&resources.materialCBStart));
 	Utils::Validate(hr, L"Error: failed to map Material constant buffer!");
 
 	memcpy(resources.materialCBStart, &temp, sizeof(MaterialCB));
 }
-void Model::Create_Texture(D3D12Global& d3d)
+int CreateTexture(D3D12Global& d3d, D3D12Resources& resources, TextureInfo info)
 {
-	// Load the texture
-	TextureInfo textureInfo = Utils::LoadTexture(material.texturePath);
-	material.albedoIndex = 0;
-
+	
 	D3D12_RESOURCE_DESC textureDesc = {};
-	textureDesc.Width = textureInfo.width;
-	textureDesc.Height = textureInfo.height;
+	textureDesc.Width = info.width;
+	textureDesc.Height = info.height;
 	textureDesc.MipLevels = 1;
 	textureDesc.DepthOrArraySize = 1;
 	textureDesc.SampleDesc.Count = 1;
@@ -40,15 +32,15 @@ void Model::Create_Texture(D3D12Global& d3d)
 	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 
 	// Create the texture resource
-	HRESULT hr = d3d.device->CreateCommittedResource(&DefaultHeapProperties, D3D12_HEAP_FLAG_NONE, &textureDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&texture));
+	HRESULT hr = d3d.device->CreateCommittedResource(&DefaultHeapProperties, D3D12_HEAP_FLAG_NONE, &textureDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&resources.textures[resources.numTextures]));
 	Utils::Validate(hr, L"Error: failed to create texture!");
 #if NAME_D3D_RESOURCES
-	texture->SetName(L"Texture");
+	resources.textures[resources.numTextures]->SetName(L"Texture");
 #endif
 
 	// Describe the resource
 	D3D12_RESOURCE_DESC resourceDesc = {};
-	resourceDesc.Width = (textureInfo.width * textureInfo.height * textureInfo.stride);
+	resourceDesc.Width = (info.width * info.height * info.stride);
 	resourceDesc.Height = 1;
 	resourceDesc.DepthOrArraySize = 1;
 	resourceDesc.MipLevels = 1;
@@ -58,15 +50,27 @@ void Model::Create_Texture(D3D12Global& d3d)
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 
 	// Create the upload heap
-	hr = d3d.device->CreateCommittedResource(&UploadHeapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&textureUploadResource));
+	hr = d3d.device->CreateCommittedResource(&UploadHeapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&resources.textureUploadResource[resources.numTextures]));
 	Utils::Validate(hr, L"Error: failed to create texture upload heap!");
 #if NAME_D3D_RESOURCES
-	textureUploadResource->SetName(L"Texture Upload Buffer");
+	resources.textureUploadResource[resources.numTextures]->SetName(L"Texture Upload Buffer");
 #endif
 
 	// Upload the texture to the GPU
-	D3DResources::Upload_Texture(d3d, texture, textureUploadResource, textureInfo);
-}	// Describe the texture
+	D3DResources::Upload_Texture(d3d, resources.textures[resources.numTextures], resources.textureUploadResource[resources.numTextures], info);
+	int currentIndex = resources.numTextures;
+	resources.numTextures += 1;
+	return currentIndex;
+
+}
+void Model::Create_Texture(D3D12Global& d3d, D3D12Resources& resources)
+{
+
+	// Load the texture
+	TextureInfo textureInfo = Utils::LoadTexture(material.texturePath);
+	material.albedoIndex = CreateTexture(d3d, resources, textureInfo);
+	
+}	
 
 /**
 * Create the bottom level acceleration structure.
@@ -189,15 +193,6 @@ void Model::Create_Index_Buffer(D3D12Global& d3d)
 }
 void Model::Create_DescriptorHeaps(D3D12Global& d3d, D3D12Resources& resources)
 {
-	// Create the material texture SRV
-	D3D12_SHADER_RESOURCE_VIEW_DESC textureSRVDesc = {};
-	textureSRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	textureSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	textureSRVDesc.Texture2D.MipLevels = 1;
-	textureSRVDesc.Texture2D.MostDetailedMip = 0;
-	textureSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-	d3d.device->CreateShaderResourceView(texture, &textureSRVDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());
 
 	// Create the index buffer SRV
 	D3D12_SHADER_RESOURCE_VIEW_DESC indexSRVDesc;
@@ -222,5 +217,5 @@ void Model::Create_DescriptorHeaps(D3D12Global& d3d, D3D12Resources& resources)
 	vertexSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
 	d3d.device->CreateShaderResourceView(vertexBuffer, &vertexSRVDesc, resources.SrvCbvUavHeap->GetNextHeapIndex());;
-
+	
 }

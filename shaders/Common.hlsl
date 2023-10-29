@@ -56,9 +56,9 @@ cbuffer MaterialCB : register(b1)
 RWTexture2D<float4> RTOutput				: register(u0);
 RaytracingAccelerationStructure SceneBVH	: register(t0);
 
-Texture2D<float4> albedo					: register(t1);
-ByteAddressBuffer indices					: register(t2);
-ByteAddressBuffer vertices					: register(t3);
+ByteAddressBuffer indices					: register(t1);
+ByteAddressBuffer vertices					: register(t2);
+Texture2D<float4> albedo[1]					: register(t3);
 
 // ---[ Helper Functions ]---
 

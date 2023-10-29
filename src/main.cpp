@@ -57,6 +57,7 @@ public:
 		cam = Camera(aspectRatio, fov, { 0.f,0.f,10.f }, { 0.f,0.f, 0.f });
 		// Load a model
 		//Utils::LoadModel("Models/quad.obj", model, material);
+		//model1 = Model("Models/quad.obj");
 		model = Model("Models/quad.obj");
 		
 		// Initialize the shader compiler
@@ -78,10 +79,9 @@ public:
 		model.Create_Vertex_Buffer(d3d);
 		model.Create_Index_Buffer(d3d);
 	
-		model.Create_Texture(d3d);
+		model.Create_Texture(d3d, resources);
 		D3DResources::Create_View_CB(d3d, resources);
 		model.Bind_Material(d3d, resources);
-		//D3DResources::Create_Material_CB(d3d, resources);
 
 		// Create DXR specific resources
 		model.Create_Bottom_Level_AS(d3d);
@@ -89,17 +89,17 @@ public:
 		DirectX::XMMATRIX transform = DirectX::XMMatrixIdentity();
 		DirectX::XMMATRIX transform2 = DirectX::XMMatrixIdentity();
 
-		transform2 = DirectX::XMMatrixTranslation( 0.f, 5.f, 0.f );
+		transform2 = DirectX::XMMatrixTranslation( 0.f, 10.f, 0.f );
 		transform = DirectX::XMMatrixTranslation( 0.f, -5.f, 0.f );
 
 		D3DResources::AddBLASinstance(model.GetBLAS(), DirectX::XMMatrixIdentity(), resources);
-		D3DResources::AddBLASinstance(model.GetBLAS(), transform2, resources);
-
+		
 		DXR::Create_Top_Level_AS(d3d, dxr, resources);
 		DXR::Create_DXR_Output(d3d, resources);
 		DXR::Create_Descriptor_Heaps(d3d, dxr, resources);
 		model.Create_DescriptorHeaps(d3d, resources);
-		model1.Create_DescriptorHeaps(d3d, resources);
+
+		DXR::Create_TextureDescriptor(d3d, resources);
 		DXR::Create_RayGen_Program(d3d, dxr, shaderCompiler);
 		DXR::Create_Miss_Program(d3d, dxr, shaderCompiler);
 		DXR::Create_Closest_Hit_Program(d3d, dxr, shaderCompiler);
@@ -145,7 +145,7 @@ public:
 private:
 	HWND window;
 	Model model;
-	Model model1;
+	//Model model1;
 	//Material material;
 
 	DXRGlobal dxr = {};
