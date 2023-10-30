@@ -46,10 +46,10 @@ cbuffer ViewCB : register(b0)
 	float2 resolution;
 };
 
-cbuffer instanceCB : register(b1)
-{
-    uint albedoIndex;
-};
+//cbuffer instanceCB : register(b1)
+//{
+//    uint albedoIndex;
+//};
 
 // ---[ Resources ]---
 
@@ -58,7 +58,7 @@ RaytracingAccelerationStructure SceneBVH	: register(t0);
 
 ByteAddressBuffer indices					: register(t1);
 ByteAddressBuffer vertices					: register(t2);
-Texture2D<float4> albedo[1]					: register(t3);
+Texture2D<float4> albedo[2]					: register(t3);
 
 // ---[ Helper Functions ]---
 

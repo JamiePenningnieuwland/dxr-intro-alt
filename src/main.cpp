@@ -58,7 +58,7 @@ public:
 
 		// Load a model
 		model = Model("Models/quad.obj");
-		model1 = Model("Models/quad2.obj");
+		model1 = Model("Models/quad.obj");
 		
 		// Initialize the shader compiler
 		D3DShaders::Init_Shader_Compiler(shaderCompiler);

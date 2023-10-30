@@ -36,11 +36,11 @@ void ClosestHit(inout HitInfo payload, Attributes attrib)
 	float3 barycentrics = float3((1.0f - attrib.uv.x - attrib.uv.y), attrib.uv.x, attrib.uv.y);
 	VertexAttributes vertex = GetVertexAttributes(triangleIndex, barycentrics);
 
-    //int2 dim;
-    //albedo[albedoIndex].GetDimensions(dim.x, dim.y);
+    int2 dim;
+    albedo[0].GetDimensions(dim.x, dim.y);
 	
-    //int2 coord = floor(vertex.uv * dim.x);
-    float3 color = float3(1.f, 0.f, 0.f); //albedo[albedoIndex].Load(int3(coord, 0)).rgb;
+    int2 coord = floor(vertex.uv * dim.x);
+    float3 color = /*float3(1.f, 0.f, 0.f);*/ albedo[0].Load(int3(coord, 0)).rgb;
 
 	payload.ShadedColorAndHitT = float4(color, RayTCurrent());
 }

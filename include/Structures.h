@@ -178,7 +178,7 @@ class DescriptorHeap
 {
 public:
 	DescriptorHeap() = default;
-	// Default size is biggest number
+	// Default size is big number
 	DescriptorHeap(D3D12Global& d3d, uint32_t size = 2000);
 	
 	void SetDescriptorHeap(D3D12Global& d3d);
@@ -187,7 +187,7 @@ public:
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetHeapIndex(UINT index);
 	
-	const D3D12_GPU_DESCRIPTOR_HANDLE GetGPUhandle() const;// { return GPUhandle; }
+	const D3D12_GPU_DESCRIPTOR_HANDLE GetGPUhandle() const;
 	~DescriptorHeap();
 
 	
